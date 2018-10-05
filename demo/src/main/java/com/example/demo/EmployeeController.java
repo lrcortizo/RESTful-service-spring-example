@@ -1,9 +1,15 @@
-package payroll;
+package com.example.demo;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityNotFoundException;
 
+import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.Resources;
+
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,15 +23,26 @@ class EmployeeController {
 
 	private final EmployeeRepository repository;
 
-	EmployeeController(EmployeeRepository repository) {
+	private final EmployeeResourceAssembler assembler;
+
+	EmployeeController(EmployeeRepository repository,
+					   EmployeeResourceAssembler assembler) {
+
 		this.repository = repository;
+		this.assembler = assembler;
 	}
 
 	// Aggregate root
 
 	@GetMapping("/employees")
-	List<Employee> all() {
-		return repository.findAll();
+	Resources<Resource<Employee>> all() {
+
+		List<Resource<Employee>> employees = repository.findAll().stream()
+			.map(assembler::toResource)
+			.collect(Collectors.toList());
+
+		return new Resources<>(employees,
+			linkTo(methodOn(EmployeeController.class).all()).withSelfRel());
 	}
 
 	@PostMapping("/employees")
@@ -36,10 +53,12 @@ class EmployeeController {
 	// Single item
 
 	@GetMapping("/employees/{id}")
-	Employee one(@PathVariable Long id) {
+	Resource<Employee> one(@PathVariable Long id) {
 
-		return repository.findById(id)
+		Employee employee = repository.findById(id)
 			.orElseThrow(() -> new EntityNotFoundException());
+
+		return assembler.toResource(employee);
 	}
 
 	@PutMapping("/employees/{id}")

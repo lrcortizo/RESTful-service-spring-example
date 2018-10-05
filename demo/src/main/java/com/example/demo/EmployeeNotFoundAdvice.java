@@ -1,4 +1,4 @@
-package payroll;
+package com.example.demo;
 
 import javax.persistence.EntityNotFoundException;
 

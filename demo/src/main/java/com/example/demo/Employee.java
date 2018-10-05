@@ -1,4 +1,4 @@
-package payroll;
+package com.example.demo;
 
 import lombok.Data;
 
